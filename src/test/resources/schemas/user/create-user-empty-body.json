@@ -1,0 +1,6 @@
+{
+  "nome": "nome é obrigatório",
+  "email": "email é obrigatório",
+  "password": "password é obrigatório",
+  "administrador": "administrador é obrigatório"
+}

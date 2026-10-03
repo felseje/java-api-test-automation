@@ -10,12 +10,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LoginService {
 
-    private final LoginClient loginClient;
+  private final LoginClient loginClient;
 
-    public ApiResponse login(LoginRequest request) {
-        ArgumentValidator.requireNotNull(request, "The login request cannot be null");
-        Response response = loginClient.login(request);
-        return new ApiResponse(response);
-    }
+  public ApiResponse login(LoginRequest request) {
+    ArgumentValidator.requireNotNull(request, "The login request cannot be null");
+    Response response = loginClient.login(request);
+    return new ApiResponse(response);
+  }
 
 }

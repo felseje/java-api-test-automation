@@ -8,12 +8,12 @@ import io.restassured.response.Response;
 
 public class LoginClient extends AbstractClient {
 
-    public Response login(LoginRequest request) {
-        RequestContext context = RequestContext.builder()
-                .body(request)
-                .contentType(ContentType.JSON)
-                .build();
-        return post(context, "/login");
-    }
+  public Response login(LoginRequest request) {
+    RequestContext context = RequestContext.builder()
+        .body(request)
+        .contentType(ContentType.JSON)
+        .build();
+    return post(context, "/login");
+  }
 
 }
