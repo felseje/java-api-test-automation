@@ -10,39 +10,49 @@ on:
       - main
       - example
 
+permissions:
+  contents: read
+  checks: write
+
 jobs:
-  build:
+  integration-tests:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Java 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
+          cache: maven
 
-      - name: Cache Maven Dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Build and Run Tests
+      - name: Run Integration Tests (Failsafe)
         run: mvn clean verify
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: API Integration Tests
+          path: target/failsafe-reports/TEST-*.xml
+          reporter: java-junit
+          fail-on-error: false
 
       - name: Upload Failsafe HTML Report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: failsafe-html-report
-          path: target/site/failsafe-report
+          path: target/site
+          if-no-files-found: ignore
 
       - name: Upload Raw Test Results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: surefire-reports
-          path: target/surefire-reports
+          name: failsafe-reports
+          path: target/failsafe-reports
+          if-no-files-found: ignore

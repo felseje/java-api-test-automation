@@ -22,7 +22,7 @@ public class LoginIT {
 
   @Nested
   @DisplayName("Successful login scenarios")
-  public class SuccessfulLogin {
+  class SuccessfulLogin {
 
     private static final String LOGIN_SUCCESS_SCHEMA = "schemas/login/success.json";
 
@@ -44,7 +44,7 @@ public class LoginIT {
 
   @Nested
   @DisplayName("Failed login scenarios")
-  public class FailedLogin {
+  class FailedLogin {
 
     private static final String LOGIN_UNAUTHORIZED_SCHEMA = "schemas/login/unauthorized.json";
     private static final String LOGIN_EMPTY_EMAIL_SCHEMA = "schemas/login/empty-email.json";

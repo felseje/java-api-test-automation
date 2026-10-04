@@ -1,6 +1,28 @@
 {
-  "nome": "nome é obrigatório",
-  "email": "email é obrigatório",
-  "password": "password é obrigatório",
-  "administrador": "administrador é obrigatório"
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "const": "nome é obrigatório"
+    },
+    "email": {
+      "type": "string",
+      "const": "email é obrigatório"
+    },
+    "password": {
+      "type": "string",
+      "const": "password é obrigatório"
+    },
+    "administrador": {
+      "type": "string",
+      "const": "administrador é obrigatório"
+    }
+  },
+  "required": [
+    "nome",
+    "email",
+    "password",
+    "administrador"
+  ],
+  "additionalProperties": false
 }
