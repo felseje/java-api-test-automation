@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": [
+    "email"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "email": {
+      "type": "string",
+      "const": "email não pode ficar em branco"
+    }
+  }
+}

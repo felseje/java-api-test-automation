@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResponseSpecificationFactory {
 
-    public static ResponseSpecification getStandard() {
-        return new ResponseSpecBuilder()
-                .log(LogDetail.ALL)
-                .build();
-    }
+  public static ResponseSpecification getStandard() {
+    return new ResponseSpecBuilder()
+        .log(LogDetail.ALL)
+        .build();
+  }
 
 }
