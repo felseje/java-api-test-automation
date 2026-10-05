@@ -26,9 +26,33 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @Tag("user")
 @DisplayName("User Tests")
-public class UserIT {
+public class UserIT extends BaseIT {
 
   private final UserService userService = new UserService(new UserClient());
+
+  private void assertUserData(Map<String, Object> expected, Map<String, Object> actual) {
+    assertAll("User fields must match request",
+        () -> assertEquals(
+            expected.get("userId"), actual.get("userId"), "User id mismatch"
+        ),
+        () -> assertEquals(
+            expected.get("name"), actual.get("name"), "User name mismatch"
+        ),
+        () -> assertEquals(
+            expected.get("email"), actual.get("email"), "User email mismatch"
+        ),
+        () -> assertEquals(
+            expected.get("password"), actual.get("password"), "User password mismatch"
+        ),
+        () -> assertEquals(
+            expected.get("admin"), actual.get("admin"), "User administrator mismatch"
+        )
+    );
+  }
+
+  protected void scheduleUserRemoval(String userId) {
+    scheduleCleanup("user", userId, () -> userService.deleteUser(userId));
+  }
 
   @Nested
   @DisplayName("Success user scenarios")
@@ -46,41 +70,32 @@ public class UserIT {
       // Assert
       String userId = apiResponse.shouldBeCreated()
           .shouldHaveJsonField("message", "Cadastro realizado com sucesso")
-          .shouldContainJsonField("_id")
           .getJsonFieldValue("_id");
       UserResponse createdUser = userService.readUser(userId)
-          .shouldBeOk()
+          .assumeStatusCode(200)
           .as(UserResponse.class);
-      assertAll("User fields must match request",
-          () -> assertEquals(userId, createdUser.getId(), "User id mismatch"),
-          () -> assertEquals(request.getName(), createdUser.getName(), "User name mismatch"),
-          () -> assertEquals(request.getEmail(), createdUser.getEmail(), "User email mismatch"),
-          () -> assertEquals(request.getPassword(), createdUser.getPassword(),
-              "User password mismatch"),
-          () -> assertEquals(request.getAdministrator(), createdUser.getAdministrator(),
-              "User administrator mismatch")
-      );
+      assertUserData(request.toMap(userId), createdUser.toMap());
+
+      scheduleUserRemoval(userId);
     }
 
     @Test
     @DisplayName("Should read user by ID successfully when user exists")
     void shouldReadUserByIdSuccessfully() {
       // Arrange
-      String userId = "0uxuPY0cbmQhpEz1";
+      CreateUserRequest createUserRequest = UserProvider.getValidCreateUserRequest();
+      String userId = userService.createUser(createUserRequest)
+          .assumeStatusCode(201)
+          .getJsonFieldValue("_id");
 
       // Act
       ApiResponse apiResponse = userService.readUser(userId);
 
       // Assert
-      UserResponse user = apiResponse.shouldBeOk()
-          .as(UserResponse.class);
-      assertAll(
-          () -> assertEquals("Fulano da Silva", user.getName(), "User name mismatch"),
-          () -> assertEquals("fulano@qa.com", user.getEmail(), "User email mismatch"),
-          () -> assertEquals("teste", user.getPassword(), "User password mismatch"),
-          () -> assertEquals("true", user.getAdministrator(), "User administrator mismatch"),
-          () -> assertEquals("0uxuPY0cbmQhpEz1", user.getId(), "User id mismatch")
-      );
+      UserResponse createdUser = apiResponse.shouldBeOk().as(UserResponse.class);
+      assertUserData(createUserRequest.toMap(userId), createdUser.toMap());
+
+      scheduleUserRemoval(userId);
     }
 
     @Test
@@ -103,7 +118,11 @@ public class UserIT {
     @DisplayName("Should filter users by query params successfully")
     void shouldFilterUsersByQueryParamsSuccessfully() {
       // Arrange
-      Map<String, Object> queryParams = Map.of("nome", "Fulano da Silva");
+      CreateUserRequest createUserRequest = UserProvider.getValidCreateUserRequest();
+      Map<String, Object> queryParams = Map.of("nome", createUserRequest.getName());
+      String userId = userService.createUser(createUserRequest)
+          .assumeStatusCode(201)
+          .getJsonFieldValue("_id");
 
       // Act
       ApiResponse apiResponse = userService.readAllUsers(queryParams);
@@ -112,50 +131,39 @@ public class UserIT {
       UserListResponse users = apiResponse.shouldBeOk()
           .shouldHaveJsonField("quantidade", 1)
           .as(UserListResponse.class);
-      UserResponse user = users.getUsers().getFirst();
-      assertAll(
-          () -> assertEquals("Fulano da Silva", user.getName(), "User name mismatch"),
-          () -> assertEquals("fulano@qa.com", user.getEmail(), "User email mismatch"),
-          () -> assertEquals("teste", user.getPassword(), "User password mismatch"),
-          () -> assertEquals("true", user.getAdministrator(), "User administrator mismatch"),
-          () -> assertEquals("0uxuPY0cbmQhpEz1", user.getId(), "User id mismatch")
-      );
+      UserResponse createdUser = users.getUsers().getFirst();
+      assertUserData(createUserRequest.toMap(userId), createdUser.toMap());
+
+      scheduleUserRemoval(userId);
     }
 
     @Test
     @DisplayName("Should update user successfully when user exists")
     void shouldUpdateUserSuccessfully() {
       // Arrange
-      CreateUserRequest createRequest = UserProvider.getValidCreateUserRequest();
-      UserResponse user = userService.createUser(createRequest)
+      CreateUserRequest createUserRequest = UserProvider.getValidCreateUserRequest();
+      String userId = userService.createUser(createUserRequest)
           .assumeStatusCode(201)
-          .as(UserResponse.class);
-      UpdateUserRequest updateRequest = new UpdateUserRequest(
-          createRequest.getName(),
-          createRequest.getEmail(),
+          .getJsonFieldValue("_id");
+      UpdateUserRequest updateUserRequest = new UpdateUserRequest(
+          createUserRequest.getName(),
+          createUserRequest.getEmail(),
           "P4ssw0rd",
-          createRequest.getAdministrator()
+          createUserRequest.getAdministrator()
       );
 
       // Act
-      ApiResponse apiResponse = userService.updateUser(user.getId(), updateRequest);
+      ApiResponse apiResponse = userService.updateUser(userId, updateUserRequest);
 
       // Assert
       apiResponse.shouldBeOk()
           .shouldHaveJsonField("message", "Registro alterado com sucesso");
-      UserResponse createdUser = userService.readUser(user.getId())
+      UserResponse updatedUser = userService.readUser(userId)
           .shouldBeOk()
           .as(UserResponse.class);
-      assertAll("User fields must match request",
-          () -> assertEquals(user.getId(), createdUser.getId(), "User id mismatch"),
-          () -> assertEquals(updateRequest.getName(), createdUser.getName(), "User name mismatch"),
-          () -> assertEquals(updateRequest.getEmail(), createdUser.getEmail(),
-              "User email mismatch"),
-          () -> assertEquals(updateRequest.getPassword(), createdUser.getPassword(),
-              "User password mismatch"),
-          () -> assertEquals(updateRequest.getAdministrator(), createdUser.getAdministrator(),
-              "User administrator mismatch")
-      );
+      assertUserData(createUserRequest.toMap(userId), updatedUser.toMap());
+
+      scheduleUserRemoval(userId);
     }
 
     @Test
@@ -163,10 +171,10 @@ public class UserIT {
     void shouldCreateUserViaPutWhenIdDoesNotExist() {
       // Arrange
       String userId = UserProvider.getValidRandomUserId();
-      UpdateUserRequest updateRequest = UserProvider.getValidUpdateUserRequest();
+      UpdateUserRequest updateUserRequest = UserProvider.getValidUpdateUserRequest();
 
       // Act
-      ApiResponse apiResponse = userService.updateUser(userId, updateRequest);
+      ApiResponse apiResponse = userService.updateUser(userId, updateUserRequest);
 
       // Assert
       String createdId = apiResponse.shouldBeCreated()
@@ -175,16 +183,9 @@ public class UserIT {
       UserResponse createdUser = userService.readUser(createdId)
           .shouldBeOk()
           .as(UserResponse.class);
-      assertAll("User fields must match request",
-          () -> assertEquals(createdId, createdUser.getId(), "User id mismatch"),
-          () -> assertEquals(updateRequest.getName(), createdUser.getName(), "User name mismatch"),
-          () -> assertEquals(updateRequest.getEmail(), createdUser.getEmail(),
-              "User email mismatch"),
-          () -> assertEquals(updateRequest.getPassword(), createdUser.getPassword(),
-              "User password mismatch"),
-          () -> assertEquals(updateRequest.getAdministrator(), createdUser.getAdministrator(),
-              "User administrator mismatch")
-      );
+      assertUserData(updateUserRequest.toMap(createdId), createdUser.toMap());
+
+      scheduleUserRemoval(createdId);
     }
 
     @Test
@@ -195,6 +196,7 @@ public class UserIT {
       String userId = userService.createUser(createRequest)
           .assumeStatusCode(201)
           .getJsonFieldValue("_id");
+
       // Act
       ApiResponse apiResponse = userService.deleteUser(userId);
 
@@ -211,58 +213,110 @@ public class UserIT {
   @DisplayName("Failure user scenarios")
   class FailureUserScenarios {
 
-    static Stream<Arguments> invalidCreateUserRequests() {
+    private static Stream<Arguments> invalidCreateUserRequests() {
       return Stream.of(
           scenario(
               "blank name",
-              r -> r.setName(""),
+              (CreateUserRequest r) -> r.setName(""),
               "nome",
               "nome não pode ficar em branco"
           ),
           scenario(
               "blank email",
-              r -> r.setEmail(""),
+              (CreateUserRequest r) -> r.setEmail(""),
               "email",
               "email não pode ficar em branco"
           ),
           scenario(
               "blank password",
-              r -> r.setPassword(""),
+              (CreateUserRequest r) -> r.setPassword(""),
               "password",
               "password não pode ficar em branco"
           ),
           scenario(
               "blank administrator",
-              r -> r.setAdministrator(""),
+              (CreateUserRequest r) -> r.setAdministrator(""),
               "administrador",
               "administrador deve ser 'true' ou 'false'"
           )
       );
     }
 
-    private static Arguments scenario(
+    private static Stream<Arguments> invalidUpdateUserRequests() {
+      return Stream.of(
+          scenario(
+              "blank name",
+              (UpdateUserRequest r) -> r.setName(""),
+              "nome",
+              "nome não pode ficar em branco"
+          ),
+          scenario(
+              "blank email",
+              (UpdateUserRequest r) -> r.setEmail(""),
+              "email",
+              "email não pode ficar em branco"
+          ),
+          scenario(
+              "blank password",
+              (UpdateUserRequest r) -> r.setPassword(""),
+              "password",
+              "password não pode ficar em branco"
+          ),
+          scenario(
+              "blank administrator",
+              (UpdateUserRequest r) -> r.setAdministrator(""),
+              "administrador",
+              "administrador deve ser 'true' ou 'false'"
+          )
+      );
+    }
+
+    private static <T> Arguments scenario(
         String description,
-        Consumer<CreateUserRequest> invalidation,
+        Consumer<T> invalidation,
         String jsonField,
         String expectedMessage) {
       return Arguments.of(description, invalidation, jsonField, expectedMessage);
     }
 
+
     @Test
     @DisplayName("Should return 400 Bad Request when creating user with duplicate email")
     void shouldFailToCreateUserWithDuplicateEmail() {
       // Arrange
-      CreateUserRequest firstUser = UserProvider.getValidCreateUserRequest();
-      CreateUserRequest secondUser = UserProvider.getValidCreateUserRequest();
-      secondUser.setEmail(firstUser.getEmail());
-      userService.createUser(firstUser).assumeStatusCode(201);
+      CreateUserRequest firstUserData = UserProvider.getValidCreateUserRequest();
+      CreateUserRequest secondUserData = UserProvider.getValidCreateUserRequest();
+      secondUserData.setEmail(firstUserData.getEmail());
+      String userId = userService.createUser(firstUserData)
+          .assumeStatusCode(201)
+          .getJsonFieldValue("_id");
 
       // Act
-      ApiResponse apiResponse = userService.createUser(secondUser);
+      ApiResponse apiResponse = userService.createUser(secondUserData);
 
       // Assert
       apiResponse.shouldBeBadRequest()
           .shouldHaveJsonField("message", "Este email já está sendo usado");
+
+      scheduleUserRemoval(userId);
+    }
+
+    @Test
+    @DisplayName("Should fail to create user with empty body")
+    void shouldFailToCreateUserWithEmptyBody() {
+      // Arrange
+      CreateUserRequest createUserRequest = new CreateUserRequest();
+
+      // Act
+      ApiResponse apiResponse = userService.createUser(createUserRequest);
+
+      // Assert
+      apiResponse.shouldBeBadRequest()
+          .shouldMatchJsonSchemaInClasspath("schemas/user/empty-body-response-error.json")
+          .shouldHaveJsonField("nome", "nome é obrigatório")
+          .shouldHaveJsonField("email", "email é obrigatório")
+          .shouldHaveJsonField("password", "password é obrigatório")
+          .shouldHaveJsonField("administrador", "administrador é obrigatório");
     }
 
     @ParameterizedTest(name = "[{index}] {0}")
@@ -283,6 +337,7 @@ public class UserIT {
 
       // Assert
       apiResponse.shouldBeBadRequest()
+          .shouldMatchJsonSchemaInClasspath("schemas/user/missing-field-schema.json")
           .shouldHaveJsonField(jsonField, expectedMessage);
     }
 
@@ -306,12 +361,13 @@ public class UserIT {
       // Arrange
       CreateUserRequest firstUserData = UserProvider.getValidCreateUserRequest();
       CreateUserRequest secondUserData = UserProvider.getValidCreateUserRequest();
-      userService.createUser(firstUserData)
-          .assumeStatusCode(201);
+      String firstUserId = userService.createUser(firstUserData)
+          .assumeStatusCode(201)
+          .getJsonFieldValue("_id");
       String secondUserId = userService.createUser(secondUserData)
           .assumeStatusCode(201)
           .getJsonFieldValue("_id");
-      UpdateUserRequest updateRequest = new UpdateUserRequest(
+      UpdateUserRequest updateUserRequest = new UpdateUserRequest(
           secondUserData.getName(),
           firstUserData.getEmail(),
           secondUserData.getPassword(),
@@ -319,33 +375,65 @@ public class UserIT {
       );
 
       // Act
-      ApiResponse apiResponse = userService.updateUser(secondUserId, updateRequest);
+      ApiResponse apiResponse = userService.updateUser(secondUserId, updateUserRequest);
 
       // Assert
       apiResponse.shouldBeBadRequest()
           .shouldHaveJsonField("message", "Este email já está sendo usado");
+
+      scheduleUserRemoval(firstUserId);
+      scheduleUserRemoval(secondUserId);
     }
 
+    // TODO: Criar massa necessária para o teste (usuário), limpando-a depois
     @Test
-    @DisplayName("Should return 400 Bad Request when updating user with invalid body")
-    void shouldFailToUpdateUserWithInvalidBody() {
+    @DisplayName("Should fail to update user with empty body")
+    void shouldFailToUpdateUserWithEmptyBody() {
       // Arrange
       String userId = "0uxuPY0cbmQhpEz1";
-      UpdateUserRequest updateRequest = new UpdateUserRequest();
+      UpdateUserRequest request = new UpdateUserRequest();
 
       // Act
-      ApiResponse apiResponse = userService.updateUser(userId, updateRequest);
+      ApiResponse apiResponse = userService.updateUser(userId, request);
 
       // Assert
       apiResponse.shouldBeBadRequest()
-          .shouldMatchJsonSchemaInClasspath("schemas/user/create-user-empty-body.json");
+          .shouldMatchJsonSchemaInClasspath("schemas/user/empty-body-response-error.json")
+          .shouldHaveJsonField("nome", "nome é obrigatório")
+          .shouldHaveJsonField("email", "email é obrigatório")
+          .shouldHaveJsonField("password", "password é obrigatório")
+          .shouldHaveJsonField("administrador", "administrador é obrigatório");
+    }
+
+    // TODO: Criar massa necessária para o teste (usuário), limpando-a depois
+    @ParameterizedTest(name = "[{index}] {0}")
+    @MethodSource("invalidUpdateUserRequests")
+    @DisplayName("Should return 400 Bad Request when updating user with invalid body")
+    void shouldFailToUpdateUserWithMissingRequiredFields(
+        String scenario,
+        Consumer<UpdateUserRequest> invalidation,
+        String jsonField,
+        String expectedMessage
+    ) {
+      // Arrange
+      String userId = "0uxuPY0cbmQhpEz1";
+      UpdateUserRequest request = UserProvider.getValidUpdateUserRequest();
+      invalidation.accept(request);
+
+      // Act
+      ApiResponse apiResponse = userService.updateUser(userId, request);
+
+      // Assert
+      apiResponse.shouldBeBadRequest()
+          .shouldMatchJsonSchemaInClasspath("schemas/user/missing-field-schema.json")
+          .shouldHaveJsonField(jsonField, expectedMessage);
     }
 
     @Test
     @DisplayName("Should return 200 OK with no records deleted message when deleting non-existent user")
     void shouldReturnNoRecordsDeletedWhenDeletingNonExistentUser() {
       // Arrange
-      String userId = "0uxuPY0cbmQhpEz2";
+      String userId = "NonExistentUser0";
 
       // Act
       ApiResponse apiResponse = userService.deleteUser(userId);
@@ -355,6 +443,7 @@ public class UserIT {
           .shouldHaveJsonField("message", "Nenhum registro excluído");
     }
 
+    // TODO: Criar massa necessária (usuário com carrinho) para executar o teste, limpando-a depois
     @Test
     @DisplayName("Should return 400 Bad Request when deleting user with an active cart")
     void shouldFailToDeleteUserWithActiveCart() {

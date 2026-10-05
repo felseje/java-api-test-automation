@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-      - example
   pull_request:
     branches:
       - main
-      - example
 
 permissions:
   contents: read
@@ -22,24 +20,26 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Setup Java 21
+      - name: Setup Java 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: maven
 
       - name: Run Integration Tests (Failsafe)
         run: mvn clean verify
 
       - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: always()
+        id: test-report
+        uses: dorny/test-reporter@v3
+        if: ${{ !cancelled() }}
         with:
           name: API Integration Tests
           path: target/failsafe-reports/TEST-*.xml
           reporter: java-junit
           fail-on-error: false
+          use-actions-summary: true
 
       - name: Upload Failsafe HTML Report
         uses: actions/upload-artifact@v4

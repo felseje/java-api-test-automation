@@ -1,6 +1,8 @@
 package io.github.felseje.apitestautomation.client.user.dto.request;
 
 import io.github.felseje.apitestautomation.client.user.dto.UserDto;
+import io.github.felseje.apitestautomation.util.ArgumentValidator;
+import java.util.HashMap;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

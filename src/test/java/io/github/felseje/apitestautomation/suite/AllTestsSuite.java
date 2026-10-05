@@ -12,6 +12,6 @@ import org.junit.platform.suite.api.SuiteDisplayName;
     LoginIT.class,
     UserIT.class
 })
-class FullTestSuite {
+class AllTestsSuite {
 
 }
