@@ -2,6 +2,7 @@ package io.github.felseje.apitestautomation.client.user.dto.response;
 
 import com.google.gson.annotations.SerializedName;
 import io.github.felseje.apitestautomation.client.user.dto.UserDto;
+import java.util.HashMap;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -27,5 +28,9 @@ public class UserResponse extends UserDto {
 
   public UserResponse(String name, String email, String password, Boolean isAdmin) {
     super(name, email, password, isAdmin.toString());
+  }
+
+  public HashMap<String, Object> toMap() {
+    return super.toMap(getId());
   }
 }

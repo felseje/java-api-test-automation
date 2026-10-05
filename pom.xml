@@ -4,15 +4,15 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- 1 - Coordenadas do Projeto (GAV) -->
+  <!-- 1 - Project Coordinates -->
   <groupId>io.github.felseje</groupId>
-  <artifactId>java-api-test-automation-framework</artifactId>
+  <artifactId>java-api-test-automation</artifactId>
   <version>1.1.0</version>
 
-  <name>Java API Test Automation Framework</name>
-  <description>Framework para automação de testes de API usando RestAssured e JUnit 5.</description>
+  <name>Java API Test Automation</name>
+  <description>API test automation project using the JUnit Jupiter and RestAssured libraries.</description>
 
-  <!-- Informações sobre quem desenvolve/mantém o projeto -->
+  <!-- Developer INFO -->
   <developers>
     <developer>
       <id>felseje</id>
@@ -20,22 +20,20 @@
       <email>felseje@hotmail.com</email>
       <roles>
         <role>Quality Assurance Engineer</role>
-        <role>Maintainer</role>
       </roles>
-      <timezone>-3</timezone>
     </developer>
   </developers>
 
-  <!-- 2 - Propriedades e Configurações Globais -->
+  <!-- 2 - Properties and Global Config -->
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
 
-    <!-- Versões de Bibliotecas -->
+    <!-- Libraries version -->
     <awaitility.version>4.3.0</awaitility.version>
     <datafaker.version>2.7.0</datafaker.version>
-    <gson.version>2.14.0</gson.version> <!-- Corrigido: gson.verson -> gson.version -->
+    <gson.version>2.14.0</gson.version>
     <junit.version>6.0.3</junit.version>
     <junit.platform.version>6.0.3</junit.platform.version>
     <logback.version>1.6.4</logback.version>
@@ -45,12 +43,13 @@
     <restassured.version>6.0.1</restassured.version>
     <slf4j.version>2.0.20</slf4j.version>
 
-    <!-- Versões de Plugins -->
+    <!-- Plugins versions -->
+    <maven.compiler.version>3.14.1</maven.compiler.version>
     <maven.surefire.version>3.5.5</maven.surefire.version>
     <maven.failsafe.version>3.5.5</maven.failsafe.version>
   </properties>
 
-  <!-- 3 - Dependências -->
+  <!-- 3 - Dependencies -->
   <dependencies>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -128,9 +127,26 @@
     </dependency>
   </dependencies>
 
-  <!-- 4 - Configuração de Build e Plugins -->
+  <!-- 4 - Build and Plugins configuration -->
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven.compiler.version}</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
