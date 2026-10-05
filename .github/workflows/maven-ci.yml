@@ -12,10 +12,6 @@ permissions:
   contents: read
   checks: write
 
-permissions:
-  contents: read
-  checks: write
-
 jobs:
   integration-tests:
     runs-on: ubuntu-latest
