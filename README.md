@@ -1,6 +1,6 @@
 # Java API Test Automation
 
-[![Build Status](https://github.com/felseje/java-api-test-automation-framework/actions/workflows/maven-ci.yml/badge.svg)](https://github.com/felseje/java-api-test-automation-framework/actions)
+[![Build Status](https://github.com/felseje/java-api-test-automation/actions/workflows/maven-ci.yml/badge.svg)](https://github.com/felseje/java-api-test-automation/actions)
 
 ## Project Description
 
